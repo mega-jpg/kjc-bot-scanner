@@ -1,3 +1,142 @@
+# Đảm bảo tất cả các endpoint đều nằm ở lề ngoài cùng
+
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+_botnet_service = None
+
+@app.post("/api/harvest-google")
+async def api_harvest_google(request: Request):
+        data = await request.json()
+        dork_file = data.get("dork_file", "inputDork/general_search_dorks.txt")
+        output_file = "outputDork/shops_fresh_2025_google.txt"
+        dork_count = int(data.get("dork_count", 50))
+        thread_count = int(data.get("thread_count", 10))
+        use_proxies = data.get("use_proxies", False)
+        use_ua_rotation = data.get("use_ua_rotation", False)
+        min_delay = int(data.get("min_delay", 15))
+        max_delay = int(data.get("max_delay", 45))
+        # Đọc dork từ file
+        with open(dork_file, "r", encoding="utf-8") as f:
+            dorks = [line.strip() for line in f if line.strip()][:dork_count]
+        # Giả lập search Google và ghi ra file output
+        with open(output_file, "w", encoding="utf-8") as f_out:
+            for dork in dorks:
+                # Thay bằng logic search thực tế
+                f_out.write(f"https://google.com/search?q={dork}\n")
+        return JSONResponse(content={"success": True, "message": f"Harvested {len(dorks)} dorks for Google."})
+
+@app.post("/api/harvest-bing")
+async def api_harvest_bing(request: Request):
+        data = await request.json()
+        dork_file = data.get("dork_file", "inputDork/general_search_dorks.txt")
+        output_file = "outputDork/shops_fresh_2025_bing.txt"
+        dork_count = int(data.get("dork_count", 50))
+        thread_count = int(data.get("thread_count", 10))
+        use_proxies = data.get("use_proxies", False)
+        use_ua_rotation = data.get("use_ua_rotation", False)
+        min_delay = int(data.get("min_delay", 15))
+        max_delay = int(data.get("max_delay", 45))
+        # Đọc dork từ file
+        with open(dork_file, "r", encoding="utf-8") as f:
+            dorks = [line.strip() for line in f if line.strip()][:dork_count]
+        # Giả lập search Bing và ghi ra file output
+        with open(output_file, "w", encoding="utf-8") as f_out:
+            for dork in dorks:
+                # Thay bằng logic search thực tế
+                f_out.write(f"https://bing.com/search?q={dork}\n")
+        return JSONResponse(content={"success": True, "message": f"Harvested {len(dorks)} dorks for Bing."})
+
+@app.post("/api/harvest-yandex")
+async def api_harvest_yandex(request: Request):
+        data = await request.json()
+        dork_file = data.get("dork_file", "inputDork/general_search_dorks.txt")
+        output_file = "outputDork/shops_fresh_2025_yandex.txt"
+        dork_count = int(data.get("dork_count", 50))
+        thread_count = int(data.get("thread_count", 10))
+        use_proxies = data.get("use_proxies", False)
+        use_ua_rotation = data.get("use_ua_rotation", False)
+        min_delay = int(data.get("min_delay", 15))
+        max_delay = int(data.get("max_delay", 45))
+        # Đọc dork từ file
+        with open(dork_file, "r", encoding="utf-8") as f:
+            dorks = [line.strip() for line in f if line.strip()][:dork_count]
+        # Giả lập search Yandex và ghi ra file output
+        with open(output_file, "w", encoding="utf-8") as f_out:
+            for dork in dorks:
+                # Thay bằng logic search thực tế
+                f_out.write(f"https://yandex.com/search/?text={dork}\n")
+        return JSONResponse(content={"success": True, "message": f"Harvested {len(dorks)} dorks for Yandex."})
+
+@app.post("/api/harvest-duckduckgo")
+async def api_harvest_duckduckgo(request: Request):
+        data = await request.json()
+        dork_file = data.get("dork_file", "inputDork/general_search_dorks.txt")
+        output_file = "outputDork/shops_fresh_2025_duckduckgo.txt"
+        dork_count = int(data.get("dork_count", 50))
+        thread_count = int(data.get("thread_count", 10))
+        use_proxies = data.get("use_proxies", False)
+        use_ua_rotation = data.get("use_ua_rotation", False)
+        min_delay = int(data.get("min_delay", 15))
+        max_delay = int(data.get("max_delay", 45))
+        # Đọc dork từ file
+        with open(dork_file, "r", encoding="utf-8") as f:
+            dorks = [line.strip() for line in f if line.strip()][:dork_count]
+        # Giả lập search DuckDuckGo và ghi ra file output
+        with open(output_file, "w", encoding="utf-8") as f_out:
+            for dork in dorks:
+                # Thay bằng logic search thực tế
+                f_out.write(f"https://duckduckgo.com/?q={dork}\n")
+        return JSONResponse(content={"success": True, "message": f"Harvested {len(dorks)} dorks for DuckDuckGo."})
+
+@app.post("/api/harvest-commoncrawl")
+async def api_harvest_commoncrawl(request: Request):
+    data = await request.json()
+    max_files = int(data.get("max_files", 10))
+    threads = int(data.get("threads", 5))  # Chưa dùng đa luồng, để mở rộng sau
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, harvest_common_crawl, max_files)
+    return JSONResponse(content={"success": True, "message": f"Harvested {max_files} WARC files."})
+# --- Common Crawl Harvest (NO WARC SAVE) ---
+import requests, gzip, time
+
+def harvest_common_crawl(max_files=30, keyword_file="inputDork/common_crawl_dorks.txt", output_file="outputDork/shops_fresh_2025_common_crawl.txt"):
+    """
+    Stream WARC files from Common Crawl, filter by keywords, and save matching URLs.
+    Args:
+        max_files (int): Number of WARC files to stream.
+        keyword_file (str): Path to keyword file.
+        output_file (str): Path to output file.
+    """
+    # Đọc keyword từ file input
+    with open(keyword_file, "r", encoding="utf-8") as f:
+        KEYWORDS = [line.strip() for line in f if line.strip()]
+
+    # Lấy danh sách WARC paths
+    index_url = "https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-44/warc.paths.gz"
+    index = requests.get(index_url)
+    paths = gzip.decompress(index.content).decode().splitlines()[:max_files]
+
+    # Stream WARC và lọc URL
+    for path in paths:
+        warc_url = f"https://data.commoncrawl.org/{path}"
+        print(f"[STREAM] Đang đọc {warc_url}...")
+        try:
+            with requests.get(warc_url, stream=True, timeout=60) as r:
+                for line in r.iter_lines():
+                    if line:
+                        decoded = line.decode(errors='ignore')
+                        if any(kw in decoded for kw in KEYWORDS):
+                            url = decoded.split()[0]
+                            print(f"[SHOP] {url}")
+                            with open(output_file, "a", encoding="utf-8") as f_out:
+                                f_out.write(url + "\n")
+        except Exception as e:
+            print(f"[ERROR] {e}")
+            continue
+        time.sleep(3)
 import json
 import httpx
 """
@@ -187,8 +326,6 @@ class BotnetService:
 # --- FastAPI endpoint for /api/scrape-sjc ---
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-
-app = FastAPI()
 
 _botnet_service = None
 

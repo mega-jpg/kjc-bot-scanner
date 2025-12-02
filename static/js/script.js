@@ -1,3 +1,33 @@
+// --- Common Crawl Harvest Trigger ---
+async function startCommonCrawlHarvest() {
+    const maxFiles = document.getElementById('cc-max-files')?.value || 10;
+    const threads = document.getElementById('cc-threading')?.checked ? 5 : 1;
+    const btn = document.getElementById('start-harvest-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ Harvesting...';
+    }
+    try {
+        const response = await fetch('/api/harvest-commoncrawl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ max_files: maxFiles, threads: threads })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert('✅ Harvest completed: ' + result.message);
+        } else {
+            alert('❌ Harvest failed: ' + (result.message || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('❌ Network error: ' + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '🚀 Start Harvesting';
+        }
+    }
+}
 // Fake Document Generator - JavaScript Functions
 
 function showTab(tabName) {
@@ -718,56 +748,99 @@ let ccMinerStartTime = null;
 let isCCMining = false;
 
 async function startCCMiner() {
-    const startBtn = document.getElementById('start-cc-btn');
-    const stopBtn = document.getElementById('stop-cc-btn');
-    const statsDiv = document.getElementById('cc-stats');
-    const resultsDiv = document.getElementById('cc-results');
-    
+    const startBtn = document.getElementById('start-harvest-btn');
+    const stopBtn = document.getElementById('stop-harvest-btn');
+    const statsDiv = document.getElementById('harvest-stats');
+    const resultsDiv = document.getElementById('harvest-results');
+
     // Get configuration
     const config = {
-        crawl_id: document.getElementById('cc-crawl-id')?.value || 'CC-MAIN-2025-44',
-        max_files: parseInt(document.getElementById('cc-max-files')?.value || 10),
-        use_threading: document.getElementById('cc-threading')?.checked || true
+        engines: {
+            duckduckgo: document.getElementById('engine-duckduckgo')?.checked || false,
+            google: document.getElementById('engine-google')?.checked || false,
+            bing: document.getElementById('engine-bing')?.checked || false,
+            yandex: document.getElementById('engine-yandex')?.checked || false,
+            shodan: document.getElementById('engine-shodan')?.checked || false
+        },
+        dork_count: parseInt(document.getElementById('dork-count')?.value || 50),
+        thread_count: parseInt(document.getElementById('thread-count')?.value || 10),
+        clear_results: document.getElementById('clear-results')?.checked || false,
+        use_proxies: document.getElementById('use-proxies')?.checked || false,
+        use_ua_rotation: document.getElementById('use-ua-rotation')?.checked || false,
+        use_ghdb: document.getElementById('use-ghdb')?.checked || false,
+        ghdb_category: document.getElementById('ghdb-category')?.value || 'all',
+        min_delay: parseInt(document.getElementById('min-delay')?.value || 15),
+        max_delay: parseInt(document.getElementById('max-delay')?.value || 45),
+        use_cc: document.getElementById('use-cc')?.checked || false,
+        cc_max_files: parseInt(document.getElementById('cc-max-files')?.value || 10),
+        cc_threading: document.getElementById('cc-threading')?.checked || true
     };
-    
+
     // Validation
-    if (config.max_files < 1 || config.max_files > 100) {
-        showResult('docs-result', '❌ Max files must be between 1 and 100', true);
+    if (!config.engines.duckduckgo && !config.engines.google && !config.engines.bing && !config.engines.yandex && !config.engines.shodan && !config.use_cc) {
+        alert('Please select at least one engine or Common Crawl!');
         return;
     }
-    
+
     // Set UI state
     startBtn.disabled = true;
-    startBtn.innerHTML = '🔄 Mining...';
+    startBtn.innerHTML = '🔄 Harvesting...';
     stopBtn.disabled = false;
     statsDiv.style.display = 'block';
     resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = '<p style="color: #00ff00;">🚀 Initializing Common Crawl miner...</p>';
-    isCCMining = true;
-    ccMinerStartTime = Date.now();
-    
+    resultsDiv.innerHTML = '<p style="color: #00ff00;">🚀 Initializing harvester...</p>';
+    isHarvesting = true;
+    harvestStartTime = Date.now();
+
+    // Nếu chọn Common Crawl thì gọi task này
+    if (config.use_cc) {
+        await startCommonCrawlHarvest();
+    }
+    // Gọi các engine search phổ biến (Google, Bing, Yandex)
+    const generalEngines = ['google', 'bing', 'yandex'];
+    for (const engine of generalEngines) {
+        if (config.engines[engine]) {
+            await startEngineSearchGeneralHarvest(engine, config);
+        }
+    }
+    // Nếu cần, có thể bổ sung Shodan hoặc các engine khác riêng biệt
+}
+// Hàm harvest cho các engine phổ biến (Google, Bing, Yandex)
+async function startEngineSearchGeneralHarvest(engine, config) {
+    // Dùng chung mẫu dork, ví dụ lấy từ file inputDork/general_search_dorks.txt
+    // Gọi API backend tương ứng engine
+    const btn = document.getElementById('start-harvest-btn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = `⏳ Harvesting ${engine}...`;
+    }
     try {
-        // Start mining
-        const response = await fetch('/api/cc/start', {
+        const response = await fetch(`/api/harvest-${engine}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(config)
+            body: JSON.stringify({
+                dork_file: 'inputDork/general_search_dorks.txt',
+                dork_count: config.dork_count,
+                thread_count: config.thread_count,
+                use_proxies: config.use_proxies,
+                use_ua_rotation: config.use_ua_rotation,
+                min_delay: config.min_delay,
+                max_delay: config.max_delay
+            })
         });
-        
         const result = await response.json();
-        
-        if (response.ok && result.status === 'success') {
-            document.getElementById('cc-status').innerHTML = '<span style="color: #00ff00;">🟢 Mining</span>';
-            showResult('docs-result', '✅ Common Crawl miner started!', false);
-            
-            // Start polling for updates
-            startPollingCCMiner();
+        if (result.success) {
+            alert(`✅ ${engine} harvest completed: ` + result.message);
         } else {
-            throw new Error(result.message || 'Failed to start miner');
+            alert(`❌ ${engine} harvest failed: ` + (result.message || 'Unknown error'));
         }
-    } catch (error) {
-        showResult('docs-result', '❌ Error: ' + error.message, true);
-        resetCCMinerUI();
+    } catch (e) {
+        alert(`❌ Network error (${engine}): ` + e.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '🚀 Start Harvesting';
+        }
     }
 }
 

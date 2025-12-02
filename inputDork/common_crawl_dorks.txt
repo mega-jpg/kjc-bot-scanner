@@ -1,0 +1,64 @@
+# === MAGENTO (vuln rate 35–45%) ===
+catalogsearch/result/index
+/app/etc/local.xml
+/downloader
+/magento_version
+/mage/
+skin/adminhtml
+js/mage
+index.php/admin
+cron.php
+get.php
+errors/processor.php
+
+# === WOOCOMMERCE (vuln rate 30–40%) ===
+wc-ajax=
+wp-json/wc/v
+/wp-json/wc/store
+checkout/order-pay
+cart?add-to-cart
+add-to-cart=
+wc-api
+rest_route=/wc/
+woocommerce/assets
+
+# === OPENCART (vuln rate 25–35%) ===
+index.php?route=product
+index.php?route=checkout
+index.php?route=account
+admin/view/javascript
+upload/index.php
+catalog/view/javascript
+
+# === PRESTASHOP (vuln rate 20–30%) ===
+id_product=
+module/blockwishlist
+/module/
+prestashop/js
+config/settings.inc.php
+classes/cache
+
+# === UNIVERSAL VULN (vuln rate 60–90%) ===
+adminer.php
+phpmyadmin
+.env
+web.config
+wp-config.php
+config.php
+configuration.php
+settings.php
+backup.sql
+db_backup
+database.sql
+sql.dump
+phpinfo.php
+server-status
+debug=default
+
+# === PAYMENT GATEWAY LEAK ===
+/paypal/
+/stripe/
+/vnpay/
+/momo/
+/authorize.net/
+/2checkout/
