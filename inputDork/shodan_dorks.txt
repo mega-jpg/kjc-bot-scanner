@@ -1,0 +1,14 @@
+# Shodan Free Tier Queries - Ultra Basic (No membership required)
+# Free tier is very limited - only basic text search + simple filters
+
+# Basic text search (most reliable for free tier)
+magento
+woocommerce
+opencart
+prestashop
+shopify
+"shopping cart"
+"add to cart"
+"my account"
+"admin login"
+"payment gateway"

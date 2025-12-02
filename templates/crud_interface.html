@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Generator - Fake Docs</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Dork Harvester 2025</h1>
+        <p class="subtitle">Multi-engine shop scanner with proxy rotation & real-time harvesting</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('docs-generator')">🔍 Dork Harvester</button>
+            <button class="tab" onclick="showTab('utility-bills')">💡 Nuclei</button>
+            <button class="tab" onclick="showTab('uk-passports')">🛂 SQLMap</button>
+        </div>
+
+        <div id="docs-generator" class="tab-content active">
+            <h2>🎯 Multi-Engine Dork Scanner</h2>
+            <div class="form-group">
+                <p class="description">Scan Google/Bing/Yandex with 200+ dorks, UA rotation, SOCKS5 proxies</p>
+                
+                <div style="border: 1px solid #dbdbdb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <label for="clear-results" style="margin: 0; color: #4CAF50; padding-left: 20px;">1.SEARCH ENGINES</label>
+                    <div style="margin: 10px 0;">
+                        <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                            <label for="engine-duckduckgo" style="margin: 0;">✅ DuckDuckGo</label>
+                            <input type="checkbox" checked id="engine-duckduckgo">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                            <label for="engine-google" style="margin: 0;">✅ Google (reCAPTCHA risk)</label>
+                            <input type="checkbox" id="engine-google">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                            <label for="engine-bing" style="margin: 0;">✅ Bing (Cloudflare)</label>
+                            <input type="checkbox" id="engine-bing">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                            <label for="engine-yandex" style="margin: 0;">✅ Yandex (SmartCaptcha)</label>
+                            <input type="checkbox" id="engine-yandex">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                            <label for="engine-shodan" style="margin: 0;">✅ Shodan (Requires API Key)</label>
+                            <input type="checkbox" id="engine-shodan">
+                        </div>
+                    </div>
+                    <div id="shodan-info" style="margin-top: 10px; padding: 10px; background: #fff9a4; border-radius: 4px; font-size: 11px; display: none;">
+                        <p style="margin: 0; color: #ff6b6b;">⚠️ Shodan requires API key in .env file</p>
+                        <p style="margin: 5px 0 0 0; color: #888;">Add: <code style="padding: 2px 6px; border-radius: 3px;">SHODAN_API_KEY=your_key_here</code></p>
+                        <p style="margin: 5px 0 0 0; color: #888;">Get key at: <a href="https://account.shodan.io/" target="_blank" style="color: #4CAF50;">https://account.shodan.io/</a></p>
+                    </div>
+                </div>
+                <div style="border: 1px solid #dbdbdb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <label for="clear-results" style="margin: 0; color: #4CAF50; padding-left: 20px;">2.DORK CONFIGURATION</label>
+                    <label for="dork-count" style="margin-top: 10px;">Number of Dorks to Use:</label>
+                    <input type="number" id="dork-count" value="20" min="1" max="200">
+                    
+                    <div style="margin: auto 0; padding: 15px 0; display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                        <label for="use-ghdb" style="margin: 0;">🌐 Use GHDB Dorks (8,000+ from Pagodo)</label>
+                        <input type="checkbox" id="use-ghdb"> 
+                    </div>
+                    <div style="padding: 0 0 15px 0;">
+                        <div id="ghdb-options" style="margin-top: 10px; display: none;">
+                            <label for="ghdb-category">GHDB Category:</label>
+                            <select id="ghdb-category" style="width: 100%; padding: 8px 0; background: gray; color: white; border: 1px solid #444; border-radius: 4px;">
+                                <option value="all">All Categories (8,000+ dorks)</option>
+                                <option value="footholds">Footholds</option>
+                                <option value="usernames">Files Containing Usernames</option>
+                                <option value="sensitive_directories">Sensitive Directories</option>
+                                <option value="web_server_detection">Web Server Detection</option>
+                                <option value="vulnerable_files">Vulnerable Files</option>
+                                <option value="vulnerable_servers">Vulnerable Servers</option>
+                                <option value="error_messages">Error Messages</option>
+                                <option value="juicy_info">Files Containing Juicy Info</option>
+                                <option value="passwords">Files Containing Passwords</option>
+                                <option value="shopping_info">Sensitive Shopping Info</option>
+                                <option value="network_data">Network/Vulnerability Data</option>
+                                <option value="login_portals">Pages Containing Login Portals</option>
+                                <option value="online_devices">Various Online Devices</option>
+                                <option value="advisories">Advisories & Vulnerabilities</option>
+                            </select>
+                            <p style="color: #888; font-size: 12px; margin: 5px 0;">⚠️ Warning: 'All Categories' may take hours/days to complete</p>
+                            <div id="ghdb-info" style="margin-top: 10px; padding: 10px; background: #fff9e6; border: 1px solid #ffa500; border-radius: 4px; font-size: 11px;">
+                                <p style="margin: 0; color: #888;">📅 Loading GHDB info...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Common Crawl Configuration -->
+                    <div style="margin: auto 0; padding: 15px 0; display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                        <label for="use-cc" style="margin: 0;">🌐 Use Common Crawl (300k+ shops/day)</label>
+                        <input type="checkbox" id="use-cc">
+                    </div>
+                    <div style="padding: 0 0 15px 0;">
+                        <div id="cc-options" style="margin-top: 10px; display: none;">
+                            <label for="cc-crawl-id">Crawl ID (Format: CC-MAIN-YYYY-WW):</label>
+                            <input type="text" id="cc-crawl-id" value="CC-MAIN-2025-44" placeholder="CC-MAIN-2025-44" style="width: 100%; padding: 8px; background: gray; color: white; border: 1px solid #444; border-radius: 4px;">
+                            <p style="font-size: 11px; color: #888; margin: 5px 0;">Latest crawl: November 2025. Check <a href="https://commoncrawl.org/get-started" target="_blank" style="color: #4CAF50;">commoncrawl.org</a></p>
+                            
+                            <label for="cc-max-files" style="margin-top: 10px; display: block;">Max WARC Files (1 file = ~1GB, ~50M URLs):</label>
+                            <input type="number" id="cc-max-files" value="10" min="1" max="100" style="width: 100%; padding: 8px; background: gray; color: white; border: 1px solid #444; border-radius: 4px;">
+                            <p style="font-size: 11px; color: #888; margin: 5px 0;">10 files = ~10GB download, ~50k shops. 50 files = ~50GB, ~500k shops.</p>
+                            
+                            <div style="display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px; margin: 10px 0;">
+                                <label for="cc-threading" style="margin: 0;">Multi-threading (5 concurrent downloads)</label>
+                                <input type="checkbox" id="cc-threading" checked>
+                            </div>
+                            
+                            <div style="margin-top: 10px; padding: 10px; background: #fff9e6; border: 1px solid #ffa500; border-radius: 4px; font-size: 11px;">
+                                <p style="margin: 0; color: #ff6b6b; font-weight: bold;">⚠️ COMMON CRAWL INFO:</p>
+                                <p style="margin: 5px 0 0 0; color: #888;">• Download: ~10MB/s (10 files = 15-20 min)</p>
+                                <p style="margin: 3px 0 0 0; color: #888;">• Patterns: Magento, WooCommerce, Shopify, OpenCart</p>
+                                <p style="margin: 3px 0 0 0; color: #888;">• Free & unlimited (no API key needed)</p>
+                                <p style="margin: 3px 0 0 0; color: #888;">• Output: shops_fresh_2025_commoncrawl.txt</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="border: 1px solid #dbdbdb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <label for="clear-results" style="margin: 0; color: #4CAF50; padding-left: 20px;">3.PERFORMANCE SETTINGS</label>
+                    <label for="thread-count" style="margin-top: 10px;">Threads (VPS mode):</label>
+                    <input type="number" id="thread-count" value="5" min="1" max="50">
+                    
+                    <div style="margin: 15px 0;">
+                        <label for="min-delay">Min Delay Between Requests (seconds):</label>
+                        <input type="number" id="min-delay" value="15" min="1" max="120">
+                        
+                        <label for="max-delay" style="margin-top: 10px;">Max Delay Between Requests (seconds):</label>
+                        <input type="number" id="max-delay" value="45" min="1" max="180">
+                        <p style="color: #888; font-size: 12px; margin: 5px 0;">ℹ️ Random delays help avoid detection (Pagodo-style)</p>
+                    </div>            
+                    <p style="color: #888; font-size: 13px; margin: 10px 0;">
+                        ℹ️ Auto-stop enabled: Stops when no new unique shops found (max 100 pages/dork)
+                    </p>
+                </div>
+                <div style="border: 1px solid #dbdbdb; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                    <label for="clear-results" style="margin: 0; color: #4CAF50; padding-left: 20px;">4.OPTION</label>
+                    <div style="margin-top: 15px; display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                        <label for="clear-results" style="margin: 0;">Clear results before harvest</label>
+                        <input type="checkbox" id="clear-results">
+                    </div>
+                    
+                    <div style="margin-top: 5px; display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                        <label for="use-proxies" style="margin: 0;">Use SOCKS5 Proxy Rotation</label>
+                        <input type="checkbox" id="use-proxies">
+                    </div>
+                    
+                    <div style="margin-top: 5px; display: grid; grid-template-columns: 50% 10%; align-items: center; gap: 10px;">
+                        <label for="use-ua-rotation" style="margin: 0;">Use User-Agent Rotation</label>
+                        <input type="checkbox" checked id="use-ua-rotation">
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="button" class="btn" id="start-harvest-btn" onclick="startDorkHarvest()">
+                        🚀 Start Harvesting
+                    </button>
+                    
+                    <button type="button" class="btn" id="stop-harvest-btn" onclick="stopDorkHarvest()" style="background: #dc3545; margin-left: 10px;">
+                        ⛔ Stop Harvester
+                    </button>
+                </div>
+                
+                <div id="harvest-stats" style="margin-top: 20px; padding: 15px; background: gray; border-radius: 8px; display: none;">
+                    <h3 style="margin-top: 0;">📊 Live Statistics</h3>
+                    <p>🔴 Status: <span id="status">Idle</span></p>
+                    <p>🎯 Shops Found: <span id="shops-found">0</span></p>
+                    <p>📡 Active Threads: <span id="active-threads">0</span></p>
+                    <p>🌐 Current Engine: <span id="current-engine">-</span></p>
+                    <p>⏱️ Runtime: <span id="runtime">00:00:00</span></p>
+                    <div id="cc-metrics" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #444;">
+                        <p style="color: #ffa500; font-weight: bold;">🌐 Common Crawl Mining:</p>
+                        <p>📦 WARC Files: <span id="cc-progress">0 / 0</span></p>
+                        <p>⬇️ Downloaded: <span id="cc-download">0 MB</span></p>
+                        <p>⚡ Filter Speed: <span id="cc-speed">0 URLs/s</span></p>
+                    </div>
+                </div>
+                
+                <div id="harvest-results" style="margin-top: 15px; max-height: 300px; overflow-y: auto; background: gray; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; display: none;">
+                    <!-- Real-time shop URLs appear here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="utility-bills" class="tab-content">
+            <h2>💡 Utility Bill Generator</h2>
+            <div class="form-group">
+                <p class="description">Generate realistic utility bills with random data</p>
+                
+                <label for="bill-count">Number of Bills:</label>
+                <input type="number" id="bill-count" value="10" min="1" max="100">
+                
+                <button type="button" class="btn" id="generate-bills-btn" onclick="generateUtilityBills()">
+                    💡 Generate Utility Bills
+                </button>
+            </div>
+        </div>
+
+        <div id="uk-passports" class="tab-content">
+            <h2>🛂 UK Passport Generator</h2>
+            <div class="form-group">
+                <p class="description">Generate realistic UK passports with hologram, UV layer, MRZ code</p>
+                
+                <label for="passport-count">Number of Passports:</label>
+                <input type="number" id="passport-count" value="10" min="1" max="100">
+                
+                <button type="button" class="btn" id="generate-passports-btn" onclick="generatePassports()">
+                    🛂 Generate Passports
+                </button>
+            </div>
+        </div>
+        
+        <div class="api-info" id="docs-result">
+            <p><em>KJC Document Services - For Testing Only</em></p>
+        </div>
+    </div>
+    
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
