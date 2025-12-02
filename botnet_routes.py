@@ -367,34 +367,71 @@ def load_shodan_dorks(filename="inputDork/shodan_dorks.txt"):
     return []
 
 # ==== COMMON CRAWL MINER FUNCTIONS ====
-def fetch_warc_paths(crawl_id="CC-MAIN-2025-44", max_files=50):
+def fetch_warc_paths(crawl_id="auto", max_files=50):
     """Fetch WARC file paths from Common Crawl index
-    
+
     Args:
-        crawl_id: Common Crawl ID (format: CC-MAIN-YYYY-WW)
+        crawl_id: Common Crawl ID (format: CC-MAIN-YYYY-WW) or "auto" to get latest
         max_files: Maximum number of WARC files to process
-    
+
     Returns:
         list: WARC file paths
     """
     import gzip
-    
+    import re
+
+    # If crawl_id is "auto", fetch the latest available crawl
+    if crawl_id == "auto" or not crawl_id or crawl_id.startswith("CC-MAIN-2025"):
+        print("[CC] Auto-detecting latest Common Crawl...")
+        try:
+            index_url = "https://data.commoncrawl.org/crawl-data/index.html"
+            print(f"[CC] Fetching HTML from: {index_url}")
+            response = requests.get(index_url, timeout=30)
+
+            # Parse HTML using parsel to extract CC-MAIN links from table
+            from parsel import Selector
+            selector = Selector(text=response.text)
+            
+            # Extract CC-MAIN crawl IDs from <tr><td><a> tags
+            cc_crawls = []
+            for tr in selector.css('tr'):
+                td_text = tr.css('td a::text').get()
+                if td_text and td_text.startswith('CC-MAIN-'):
+                    cc_crawls.append(td_text)
+            
+            # Remove duplicates and sort by newest first
+            cc_crawls = list(dict.fromkeys(cc_crawls))
+            cc_crawls.sort(reverse=True)
+            
+            print(f"[CC] Found {len(cc_crawls)} CC-MAIN crawls in HTML")
+
+            if cc_crawls:
+                crawl_id = cc_crawls[0]  # Select newest crawl
+                print(f"[CC] Selected latest crawl: {crawl_id}")
+            else:
+                print("[ERROR] No CC-MAIN crawls found")
+                return []
+
+        except Exception as e:
+            print(f"[ERROR] Failed to auto-detect crawl: {e}")
+            return []
+
     try:
         url = f"https://data.commoncrawl.org/crawl-data/{crawl_id}/warc.paths.gz"
         print(f"[CC] Fetching WARC paths from {crawl_id}...")
-        
+
         response = requests.get(url, timeout=30)
         if response.status_code != 200:
             print(f"[ERROR] Failed to fetch WARC paths: HTTP {response.status_code}")
             return []
-        
+
         paths = gzip.decompress(response.content).decode().splitlines()
         print(f"[✓] Found {len(paths)} WARC files in {crawl_id}")
-        
+
         # Limit to max_files
         limited_paths = paths[:max_files]
         print(f"[✓] Will process {len(limited_paths)} WARC files")
-        
+
         return limited_paths
     except Exception as e:
         print(f"[ERROR] fetch_warc_paths failed: {str(e)}")
@@ -470,30 +507,135 @@ def process_warc_file(path, patterns):
         return []
 
 def search_common_crawl(crawl_id, max_files, patterns, use_threading=True):
-    """Main Common Crawl search function
+    """Main Common Crawl search function using Scrapy-based harvesting
     
     Args:
-        crawl_id: Common Crawl ID
+        crawl_id: Common Crawl ID (can be 'auto' to use latest)
         max_files: Max WARC files to process
-        patterns: List of patterns to search
-        use_threading: Enable multi-threading
+        patterns: List of patterns to search (currently unused, using keywords from file)
+        use_threading: Enable multi-threading (currently unused, Scrapy is single-threaded)
     """
-    global cc_miner_state
+    global cc_miner_state, harvester_state
     
-    # Fetch WARC paths
-    warc_paths = fetch_warc_paths(crawl_id, max_files)
+    print("\n" + "="*80)
+    print("STARTING COMMON CRAWL HARVEST")
+    print("="*80 + "\n")
+    
+    index_url = "https://data.commoncrawl.org/crawl-data/index.html"
+    html_result = {}
+
+    # Fetch HTML using Scrapy
+    import scrapy
+    from scrapy.crawler import CrawlerProcess
+
+    class CrawlIndexSpider(scrapy.Spider):
+        name = "crawl_index"
+        start_urls = [index_url]
+        
+        def parse(self, response):
+            html_result['content'] = response.text
+            html_result['status'] = response.status
+            html_result['url'] = response.url
+            print(f"\n[SCRAPY] Response Status: {response.status}")
+            print(f"[SCRAPY] Response URL: {response.url}")
+            print(f"[SCRAPY] HTML Length: {len(response.text)} characters\n")
+
+    # Configure Scrapy
+    process = CrawlerProcess(settings={
+        "LOG_ENABLED": False,
+        "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    })
+    
+    process.crawl(CrawlIndexSpider)
+    print("\n[CC] Starting Scrapy crawler...")
+    process.start()
+    
+    # Process results
+    print("\n" + "="*80)
+    print("SCRAPY FETCH RESULTS")
+    print("="*80)
+    
+    if not html_result.get('content'):
+        print("\n[ERROR] Failed to fetch HTML content!")
+        cc_miner_state["status"] = "completed"
+        return
+        
+    html_content = html_result['content']
+    print(f"\n[SUCCESS] Fetched HTML successfully!")
+    print(f"[INFO] Status Code: {html_result.get('status')}")
+    print(f"[INFO] URL: {html_result.get('url')}")
+    print(f"[INFO] Content Length: {len(html_content)} characters")
+    
+    # Parse for CC-MAIN links
+    print("\n" + "="*80)
+    print("PARSING CC-MAIN LINKS")
+    print("="*80 + "\n")
+    
+    from parsel import Selector
+    selector = Selector(text=html_content)
+    
+    all_links = selector.css('tr td a::text').getall()
+    cc_main_links = [link for link in all_links if link.startswith('CC-MAIN-')]
+    print(f"[RESULT] Found {len(cc_main_links)} CC-MAIN links")
+    
+    if not cc_main_links:
+        print("\n[WARNING] No CC-MAIN links found!")
+        cc_miner_state["status"] = "completed"
+        return
+    
+    # Sort by newest first and select crawls
+    cc_main_links.sort(reverse=True)
+    
+    # Handle crawl_id selection
+    if crawl_id == "auto" or not crawl_id:
+        selected_crawl = cc_main_links[0]
+        print(f"\n[AUTO] Selected latest crawl: {selected_crawl}")
+    else:
+        # User specified a crawl ID
+        if crawl_id in cc_main_links:
+            selected_crawl = crawl_id
+            print(f"\n[USER] Selected specified crawl: {selected_crawl}")
+        else:
+            selected_crawl = cc_main_links[0]
+            print(f"\n[WARNING] Crawl '{crawl_id}' not found, using latest: {selected_crawl}")
+    
+    # Fetch WARC paths for selected crawl
+    warc_paths = fetch_warc_paths(selected_crawl, max_files)
     if not warc_paths:
         print("[ERROR] No WARC paths found")
+        cc_miner_state["status"] = "completed"
         return
     
     cc_miner_state["total_warc_files"] = len(warc_paths)
+    print(f"\n[SUCCESS] Found {len(warc_paths)} WARC files to process")
     
+    # Load keywords from file for filtering
+    keyword_file = "inputDork/common_crawl_dorks.txt"
+    keywords = []
+    if os.path.exists(keyword_file):
+        try:
+            with open(keyword_file, "r", encoding="utf-8") as f:
+                keywords = [line.strip().lower() for line in f if line.strip() and not line.startswith('#')]
+            print(f"[✓] Loaded {len(keywords)} keywords from {keyword_file}")
+        except Exception as e:
+            print(f"[WARNING] Failed to load keywords: {e}")
+    
+    if not keywords:
+        # Default shop keywords if file not found
+        keywords = [
+            "myshopify.com", "shopify", "woocommerce", "magento",
+            "opencart", "prestashop", "bigcommerce", "wix.com/stores",
+            "/checkout", "/cart", "/shop/", "add-to-cart", "product_id="
+        ]
+        print(f"[WARNING] Using default keywords: {len(keywords)} patterns")
+    
+    # Process WARC files with multi-threading
     if use_threading:
-        # Multi-threaded processing (5 concurrent downloads)
         from concurrent.futures import ThreadPoolExecutor, as_completed
         
+        print(f"\n[CC] Starting multi-threaded WARC processing (5 workers)...\n")
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {executor.submit(process_warc_file, path, patterns): path 
+            futures = {executor.submit(process_warc_file_with_keywords, path, keywords): path 
                       for path in warc_paths}
             
             for future in as_completed(futures):
@@ -503,22 +645,99 @@ def search_common_crawl(crawl_id, max_files, patterns, use_threading=True):
                     break
                 
                 try:
-                    result = future.result()
+                    future.result()
                 except Exception as e:
                     print(f"[ERROR] Thread exception: {str(e)}")
     else:
         # Sequential processing
+        print(f"\n[CC] Starting sequential WARC processing...\n")
         for path in warc_paths:
             if cc_miner_state["stop_flag"]:
                 break
-            process_warc_file(path, patterns)
+            process_warc_file_with_keywords(path, keywords)
     
     # Export results
     output_file = "outputDork/shops_fresh_2025_commoncrawl.txt"
     export_shops_to_file("commoncrawl", output_file)
     
     cc_miner_state["status"] = "completed"
-    print(f"[✓] Common Crawl mining completed: {cc_miner_state['shops_found']} shops")
+    harvester_state["shops_found"] += cc_miner_state["shops_found"]
+    
+    print("\n" + "="*80)
+    print(f"COMMON CRAWL HARVEST COMPLETED - {cc_miner_state['shops_found']} shops found")
+    print("="*80 + "\n")
+
+def process_warc_file_with_keywords(warc_path, keywords):
+    """Process a single WARC file and filter URLs by keywords
+    
+    Args:
+        warc_path: Full URL to WARC file
+        keywords: List of keywords to filter URLs (lowercase)
+    """
+    global cc_miner_state
+    import gzip
+    from urllib.parse import urlparse
+    
+    warc_filename = warc_path.split('/')[-1]
+    cc_miner_state["current_warc"] = warc_filename
+    cc_miner_state["warc_files_processed"] += 1
+    
+    print(f"[{cc_miner_state['warc_files_processed']}/{cc_miner_state['total_warc_files']}] Processing: {warc_filename}")
+    
+    try:
+        # Stream WARC file
+        response = requests.get(warc_path, stream=True, timeout=300)
+        response.raise_for_status()
+        
+        shops_found_in_file = 0
+        urls_checked = 0
+        
+        # Decompress and parse WARC
+        with gzip.GzipFile(fileobj=response.raw) as gz:
+            content = gz.read().decode('utf-8', errors='ignore')
+            
+            # Extract URLs from WARC content
+            # WARC format: URLs appear after "WARC-Target-URI: "
+            import re
+            url_pattern = r'WARC-Target-URI: (https?://[^\s]+)'
+            urls = re.findall(url_pattern, content)
+            
+            for url in urls:
+                urls_checked += 1
+                url_lower = url.lower()
+                
+                # Check if URL contains any keyword
+                matched = False
+                for keyword in keywords:
+                    if keyword in url_lower:
+                        matched = True
+                        break
+                
+                if matched:
+                    # Extract domain
+                    try:
+                        domain = urlparse(url).netloc
+                        if domain:
+                            # Insert to database (auto-dedup via SQLite UNIQUE constraint)
+                            is_new = check_and_insert_shop(domain, "commoncrawl")
+                            if is_new:
+                                shops_found_in_file += 1
+                                cc_miner_state["shops_found"] += 1
+                                cc_miner_state["recent_shops"].append(domain)
+                                
+                                # Keep recent_shops list manageable
+                                if len(cc_miner_state["recent_shops"]) > 100:
+                                    cc_miner_state["recent_shops"] = cc_miner_state["recent_shops"][-100:]
+                                
+                                # Update harvester state for UI
+                                harvester_state["recent_shops"] = cc_miner_state["recent_shops"][:10]
+                    except Exception as e:
+                        pass  # Skip invalid URLs
+        
+        print(f"  ✓ {warc_filename}: {shops_found_in_file} new shops (checked {urls_checked} URLs)")
+        
+    except Exception as e:
+        print(f"  ✗ {warc_filename}: Failed - {str(e)}")
 
 def get_proxy_pagodo_style(proxy_list):
     """Pagodo-style round-robin proxy rotation"""
@@ -1042,7 +1261,7 @@ async def start_dork_harvest(request: Dict):
         use_cc = request.get("use_cc", False)
         if use_cc:
             print("[✓] Common Crawl mining enabled")
-            cc_crawl_id = request.get("cc_crawl_id", "CC-MAIN-2025-44")
+            cc_crawl_id = request.get("cc_crawl_id", "auto")
             cc_max_files = request.get("cc_max_files", 10)
             cc_threading = request.get("cc_threading", True)
             
@@ -1197,7 +1416,7 @@ async def start_cc_miner(request: Dict):
     }
     
     # Get config
-    crawl_id = request.get("crawl_id", "CC-MAIN-2025-44")
+    crawl_id = request.get("crawl_id", "auto")
     max_files = min(request.get("max_files", 50), 100)  # Safety limit
     use_threading = request.get("use_threading", True)
     
