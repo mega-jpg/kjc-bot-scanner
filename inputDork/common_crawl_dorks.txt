@@ -1,64 +1,136 @@
-# === MAGENTO (vuln rate 35–45%) ===
-catalogsearch/result/index
-/app/etc/local.xml
-/downloader
-/magento_version
-/mage/
-skin/adminhtml
-js/mage
-index.php/admin
-cron.php
-get.php
-errors/processor.php
+# ========================================================
+# COMMON CRAWL INDEX API - OPTIMIZED KEYWORDS
+# ========================================================
+# Format: One keyword per line, no special chars like ? or =
+# CC Index API searches URL patterns with wildcards
+# ========================================================
 
-# === WOOCOMMERCE (vuln rate 30–40%) ===
-wc-ajax=
-wp-json/wc/v
-/wp-json/wc/store
-checkout/order-pay
-cart?add-to-cart
-add-to-cart=
-wc-api
-rest_route=/wc/
-woocommerce/assets
+# === HIGH VULN DOMAIN PATTERNS (vuln rate 70-95%) ===
+# These are DOMAIN-based searches - most effective!
+.myshopify.com
+.bigcommerce.com
+.squarespace.com/commerce
+.wixsite.com/store
+.ecwid.com
+.volusion.com
+.3dcart.com
+.shopware.com
+.xtcommerce
+.oscommerce
+.zencart
 
-# === OPENCART (vuln rate 25–35%) ===
-index.php?route=product
-index.php?route=checkout
-index.php?route=account
-admin/view/javascript
-upload/index.php
-catalog/view/javascript
+# === EXPOSED CONFIG FILES (vuln rate 80-95%) ===
+.git/config
+.git/HEAD
+.svn/entries
+.env.local
+.env.production
+.env.backup
+wp-config.php.bak
+wp-config.php.old
+wp-config.php.save
+wp-config.txt
+config.php.bak
+database.yml
+settings.py
+local.xml
+app/etc/local.xml
 
-# === PRESTASHOP (vuln rate 20–30%) ===
-id_product=
-module/blockwishlist
-/module/
-prestashop/js
-config/settings.inc.php
-classes/cache
-
-# === UNIVERSAL VULN (vuln rate 60–90%) ===
-adminer.php
-phpmyadmin
-.env
-web.config
-wp-config.php
-config.php
-configuration.php
-settings.php
-backup.sql
-db_backup
-database.sql
-sql.dump
-phpinfo.php
+# === DEBUG/PROFILER EXPOSED (vuln rate 85-95%) ===
+_debugbar
+_profiler
+phpinfo
 server-status
-debug=default
+server-info
+elmah.axd
+trace.axd
+telescope/requests
+horizon/dashboard
 
-# === PAYMENT GATEWAY LEAK ===
-/paypal/
-/stripe/
-/vnpay/
-/momo/
-/authorize.net/
-/2checkout/
+# === BACKUP FILES EXPOSED (vuln rate 90-99%) ===
+.sql.gz
+.sql.zip
+.sql.bak
+backup.zip
+backup.tar.gz
+db.sql
+dump.sql
+database.sql
+site.zip
+www.zip
+public_html.zip
+htdocs.zip
+
+# === ADMIN PANELS EXPOSED (vuln rate 60-80%) ===
+/admin/
+/administrator/
+/wp-admin/
+/manager/
+/cpanel/
+/webmail/
+/phpmyadmin/
+/adminer/
+/pma/
+/myadmin/
+
+# === MAGENTO SPECIFIC (vuln rate 35-45%) ===
+skin/adminhtml
+/downloader/
+magento/app
+/mage/
+catalogsearch
+customer/account
+
+# === WOOCOMMERCE SPECIFIC (vuln rate 30-40%) ===
+wp-content/plugins/woocommerce
+wc-api
+wp-json/wc
+/shop/
+/cart/
+/checkout/
+
+# === OPENCART SPECIFIC (vuln rate 25-35%) ===
+catalog/view/theme
+/admin/view/
+system/storage
+/image/catalog/
+
+# === PRESTASHOP SPECIFIC (vuln rate 20-30%) ===
+/modules/
+/themes/default
+/classes/
+prestashop
+
+# === PAYMENT GATEWAY INDICATORS (vuln rate 40-60%) ===
+/checkout/payment
+/payment/process
+/order/pay
+stripe/webhook
+paypal/ipn
+authorize.net
+braintree
+2checkout
+adyen
+
+# === API ENDPOINTS EXPOSED (vuln rate 50-70%) ===
+/api/v1/
+/api/v2/
+/rest/v1/
+graphql
+swagger.json
+openapi.json
+api-docs
+
+# === SENSITIVE DIRECTORIES (vuln rate 60-85%) ===
+/logs/
+/log/
+/tmp/
+/temp/
+/cache/
+/upload/
+/uploads/
+/backup/
+/backups/
+/old/
+/test/
+/dev/
